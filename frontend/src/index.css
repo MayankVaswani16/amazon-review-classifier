@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #020617;
+    color: #f8fafc;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0f172a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-dark-900/60 backdrop-blur-xl border border-dark-700/50 rounded-2xl shadow-2xl;
+  }
+
+  .gradient-border {
+    @apply relative rounded-2xl;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(217, 70, 239, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.2);
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white font-semibold rounded-xl
+           hover:from-primary-500 hover:to-accent-500 transition-all duration-300 transform hover:scale-[1.02]
+           active:scale-[0.98] shadow-lg shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed
+           disabled:hover:scale-100;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg
+           hover:bg-red-500/30 transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-dark-800/80 border border-dark-600/50 rounded-xl text-white
+           placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50
+           focus:border-primary-500/50 transition-all duration-300;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-positive {
+    @apply badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+  }
+
+  .badge-negative {
+    @apply badge bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+
+  .badge-noun {
+    @apply badge bg-sky-500/20 text-sky-400 border border-sky-500/30;
+  }
+
+  .badge-adjective {
+    @apply badge bg-violet-500/20 text-violet-400 border border-violet-500/30;
+  }
+
+  .stat-card {
+    @apply glass-card p-6 flex flex-col gap-2 animate-fade-in;
+  }
+
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+  }
+
+  .section-title {
+    @apply text-2xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent;
+  }
+}

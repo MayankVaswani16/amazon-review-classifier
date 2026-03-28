@@ -1,0 +1,32 @@
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Frontend (React/Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Backend (Spring Boot)
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/build/
+backend/!**/src/main/**/build/
+backend/!**/src/test/**/build/
+backend/!gradle/wrapper/gradle-wrapper.jar
+
+# NLP Service (Python)
+nlp-service/__pycache__/
+nlp-service/*.py[cod]
+nlp-service/*$py.class
+nlp-service/venv/
+nlp-service/env/
+nlp-service/.venv/
+nlp-service/pip-log.txt
+nlp-service/pip-delete-this-directory.txt
