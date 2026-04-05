@@ -53,10 +53,14 @@ public class NlpClientService {
         return response.getBody();
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> getSmoteStats() {
         String url = nlpBaseUrl + "/nlp/smote-stats";
-        ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+        );
         return response.getBody();
     }
 

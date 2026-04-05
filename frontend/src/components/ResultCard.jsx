@@ -5,67 +5,79 @@ export default function ResultCard({ result }) {
   const confidencePct = (result.confidence * 100).toFixed(1)
 
   return (
-    <div className="glass-card p-6 animate-slide-up space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Analysis Result</h3>
-        <span className={isPositive ? 'badge-positive text-sm' : 'badge-negative text-sm'}>
-          {result.label.toUpperCase()}
-        </span>
+    <div className="glass-card p-8 animate-slide-up space-y-8">
+      {/* Header — Sentiment + Confidence */}
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <p className="label-meta">Analysis Result</p>
+          <div className="flex items-center gap-4">
+            <span className={isPositive ? 'badge-positive text-sm' : 'badge-negative text-sm'}>
+              {result.label.toUpperCase()}
+            </span>
+            <span className="text-2xl font-bold tracking-tight" style={{ color: '#e4e1e9' }}>
+              {confidencePct}%
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Confidence Bar */}
       <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-dark-400">Confidence</span>
-          <span className={`font-semibold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+        <div className="flex justify-between text-xs">
+          <span style={{ color: '#908fa0' }}>Confidence</span>
+          <span className="font-semibold" style={{ color: isPositive ? '#4edea3' : '#ffb4ab' }}>
             {confidencePct}%
           </span>
         </div>
-        <div className="h-3 bg-dark-800 rounded-full overflow-hidden">
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: '#0e0e13' }}>
           <div
-            className={`h-full rounded-full transition-all duration-1000 ease-out ${
-              isPositive
-                ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
-                : 'bg-gradient-to-r from-red-500 to-red-400'
-            }`}
-            style={{ width: `${confidencePct}%` }}
+            className="h-full rounded-full transition-all duration-1000 ease-out"
+            style={{
+              width: `${confidencePct}%`,
+              background: isPositive
+                ? 'linear-gradient(90deg, #00a572, #4edea3)'
+                : 'linear-gradient(90deg, #93000a, #ffb4ab)',
+            }}
           />
         </div>
       </div>
 
       {/* Nouns & Adjectives */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Nouns */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-dark-300 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-sky-500" />
-            Product Features (Nouns)
-          </h4>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full" style={{ background: '#38bdf8' }} />
+            <h4 className="text-sm font-medium" style={{ color: '#c7c4d7' }}>
+              Product Features
+            </h4>
+          </div>
           <div className="flex flex-wrap gap-2">
             {result.nouns && result.nouns.length > 0 ? (
               result.nouns.map((noun, i) => (
                 <span key={i} className="badge-noun">{noun}</span>
               ))
             ) : (
-              <span className="text-dark-500 text-xs">No nouns detected</span>
+              <span className="text-xs" style={{ color: '#64748b' }}>No nouns detected</span>
             )}
           </div>
         </div>
 
         {/* Adjectives */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-dark-300 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-violet-500" />
-            Sentiment Descriptors (Adjectives)
-          </h4>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full" style={{ background: '#a78bfa' }} />
+            <h4 className="text-sm font-medium" style={{ color: '#c7c4d7' }}>
+              Sentiment Descriptors
+            </h4>
+          </div>
           <div className="flex flex-wrap gap-2">
             {result.adjectives && result.adjectives.length > 0 ? (
               result.adjectives.map((adj, i) => (
                 <span key={i} className="badge-adjective">{adj}</span>
               ))
             ) : (
-              <span className="text-dark-500 text-xs">No adjectives detected</span>
+              <span className="text-xs" style={{ color: '#64748b' }}>No adjectives detected</span>
             )}
           </div>
         </div>
@@ -73,21 +85,23 @@ export default function ResultCard({ result }) {
 
       {/* Feature-Sentiment Pairs Table */}
       {result.featureSentimentPairs && result.featureSentimentPairs.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-dark-300">Feature → Sentiment Pairs</h4>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium" style={{ color: '#c7c4d7' }}>
+            Feature → Sentiment Pairs
+          </h4>
+          <div className="overflow-x-auto rounded-xl" style={{ background: '#0e0e13' }}>
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-dark-700">
-                  <th className="text-left py-2 px-3 text-dark-400 font-medium">Feature</th>
-                  <th className="text-left py-2 px-3 text-dark-400 font-medium">Sentiment</th>
+                <tr>
+                  <th>Feature</th>
+                  <th>Sentiment</th>
                 </tr>
               </thead>
               <tbody>
                 {result.featureSentimentPairs.map((pair, i) => (
-                  <tr key={i} className="border-b border-dark-800/50 hover:bg-dark-800/30 transition-colors">
-                    <td className="py-2 px-3 text-sky-400">{pair[0]}</td>
-                    <td className="py-2 px-3 text-violet-400">{pair[1]}</td>
+                  <tr key={i}>
+                    <td style={{ color: '#7dd3fc' }}>{pair[0]}</td>
+                    <td style={{ color: '#c4b5fd' }}>{pair[1]}</td>
                   </tr>
                 ))}
               </tbody>
@@ -98,9 +112,10 @@ export default function ResultCard({ result }) {
 
       {/* Processed Text */}
       {result.processedText && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-dark-300">Processed Text</h4>
-          <p className="text-xs text-dark-400 bg-dark-800/50 rounded-lg p-3 font-mono leading-relaxed">
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium" style={{ color: '#c7c4d7' }}>Processed Text</h4>
+          <p className="text-xs font-mono leading-relaxed rounded-xl p-4"
+             style={{ background: '#0e0e13', color: '#908fa0' }}>
             {result.processedText}
           </p>
         </div>

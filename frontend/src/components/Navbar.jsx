@@ -14,18 +14,18 @@ export default function Navbar() {
   const [open, setOpen] = useState(false)
 
   return (
-    <nav className="sticky top-0 z-50 glass-card border-t-0 rounded-t-none border-x-0">
+    <nav className="sticky top-0 z-50 nav-glass">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center
-                            shadow-lg shadow-primary-500/25 group-hover:shadow-primary-500/40 transition-shadow duration-300">
-              <span className="text-white font-bold text-sm">SC</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                 style={{ background: 'linear-gradient(135deg, #8083ff, #6366f1)' }}>
+              <span className="text-white font-bold text-xs tracking-tight">SQ</span>
             </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent
-                             hidden sm:block">
-              Sentiment Classifier
+            <span className="text-base font-semibold hidden sm:block"
+                  style={{ color: '#c0c1ff', letterSpacing: '-0.02em' }}>
+              SentimentIQ
             </span>
           </NavLink>
 
@@ -38,12 +38,17 @@ export default function Navbar() {
                 className={({ isActive }) =>
                   `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
                   ${isActive
-                    ? 'bg-primary-500/20 text-primary-400 shadow-lg shadow-primary-500/10'
-                    : 'text-dark-300 hover:text-white hover:bg-dark-800/50'
+                    ? 'text-white'
+                    : 'text-[#908fa0] hover:text-[#c7c4d7] hover:bg-white/[0.04]'
                   }`
                 }
+                style={({ isActive }) =>
+                  isActive
+                    ? { background: 'rgba(99, 102, 241, 0.12)', color: '#c0c1ff' }
+                    : {}
+                }
               >
-                <Icon size={16} />
+                <Icon size={15} strokeWidth={2} />
                 {label}
               </NavLink>
             ))}
@@ -51,11 +56,12 @@ export default function Navbar() {
 
           {/* Mobile menu button */}
           <button
-            className="md:hidden p-2 rounded-lg text-dark-300 hover:text-white hover:bg-dark-800/50 transition-colors"
+            className="md:hidden p-2 rounded-lg transition-colors"
+            style={{ color: '#908fa0' }}
             onClick={() => setOpen(!open)}
             id="mobile-menu-button"
           >
-            {open ? <HiOutlineX size={24} /> : <HiOutlineMenu size={24} />}
+            {open ? <HiOutlineX size={22} /> : <HiOutlineMenu size={22} />}
           </button>
         </div>
 
@@ -70,12 +76,17 @@ export default function Navbar() {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
                   ${isActive
-                    ? 'bg-primary-500/20 text-primary-400'
-                    : 'text-dark-300 hover:text-white hover:bg-dark-800/50'
+                    ? 'text-[#c0c1ff]'
+                    : 'text-[#908fa0] hover:text-[#c7c4d7] hover:bg-white/[0.04]'
                   }`
                 }
+                style={({ isActive }) =>
+                  isActive
+                    ? { background: 'rgba(99, 102, 241, 0.12)' }
+                    : {}
+                }
               >
-                <Icon size={18} />
+                <Icon size={17} strokeWidth={2} />
                 {label}
               </NavLink>
             ))}

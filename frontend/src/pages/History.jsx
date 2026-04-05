@@ -43,67 +43,69 @@ export default function History() {
   const totalElements = data?.totalElements || 0
 
   return (
-    <div className="page-container space-y-6 animate-fade-in">
+    <div className="page-container space-y-8 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="section-title text-3xl">Prediction History</h1>
-          <p className="text-dark-400 text-sm mt-1">{totalElements} total predictions</p>
+          <h1 className="section-title text-3xl" style={{ letterSpacing: '-0.03em' }}>Prediction History</h1>
+          <p className="text-sm mt-1.5" style={{ color: '#908fa0' }}>
+            {totalElements.toLocaleString()} total predictions
+          </p>
         </div>
       </div>
 
       {predictions.length === 0 ? (
-        <div className="glass-card p-12 text-center">
-          <FiClock className="mx-auto text-dark-600 mb-4" size={48} />
-          <p className="text-dark-400 text-lg">No predictions yet</p>
-          <p className="text-dark-500 text-sm mt-1">Your analyzed reviews will appear here</p>
+        <div className="glass-card p-16 text-center">
+          <FiClock className="mx-auto mb-4" size={44} style={{ color: '#464554' }} strokeWidth={1.5} />
+          <p className="text-lg font-medium" style={{ color: '#c7c4d7' }}>No predictions yet</p>
+          <p className="text-sm mt-1.5" style={{ color: '#64748b' }}>Your analyzed reviews will appear here</p>
         </div>
       ) : (
         <>
           {/* Table */}
           <div className="glass-card overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-dark-700/50 bg-dark-800/30">
-                    <th className="text-left py-3 px-4 text-dark-400 font-medium">ID</th>
-                    <th className="text-left py-3 px-4 text-dark-400 font-medium">Review</th>
-                    <th className="text-left py-3 px-4 text-dark-400 font-medium">Label</th>
-                    <th className="text-left py-3 px-4 text-dark-400 font-medium">Confidence</th>
-                    <th className="text-left py-3 px-4 text-dark-400 font-medium">Date</th>
-                    <th className="text-right py-3 px-4 text-dark-400 font-medium">Actions</th>
+                  <tr>
+                    <th>ID</th>
+                    <th>Review</th>
+                    <th>Label</th>
+                    <th>Confidence</th>
+                    <th>Date</th>
+                    <th className="text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {predictions.map((pred) => (
-                    <tr
-                      key={pred.id}
-                      className="border-b border-dark-800/50 hover:bg-dark-800/30 transition-colors"
-                    >
-                      <td className="py-3 px-4 text-dark-400 font-mono text-xs">#{pred.id}</td>
-                      <td className="py-3 px-4 text-dark-200 max-w-xs truncate">
+                    <tr key={pred.id}>
+                      <td className="font-mono text-xs" style={{ color: '#64748b' }}>#{pred.id}</td>
+                      <td className="max-w-xs truncate" style={{ color: '#c7c4d7' }}>
                         {pred.reviewText}
                       </td>
-                      <td className="py-3 px-4">
+                      <td>
                         <span className={pred.label === 'positive' ? 'badge-positive' : 'badge-negative'}>
                           {pred.label}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 bg-dark-700 rounded-full overflow-hidden">
+                      <td>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: '#0e0e13' }}>
                             <div
-                              className={`h-full rounded-full ${
-                                pred.label === 'positive' ? 'bg-emerald-500' : 'bg-red-500'
-                              }`}
-                              style={{ width: `${(pred.confidence * 100)}%` }}
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${(pred.confidence * 100)}%`,
+                                background: pred.label === 'positive'
+                                  ? '#4edea3'
+                                  : '#ffb4ab',
+                              }}
                             />
                           </div>
-                          <span className="text-dark-300 text-xs">
+                          <span className="text-xs font-medium" style={{ color: '#c7c4d7' }}>
                             {(pred.confidence * 100).toFixed(1)}%
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-dark-400 text-xs whitespace-nowrap">
+                      <td className="text-xs whitespace-nowrap" style={{ color: '#908fa0' }}>
                         {new Date(pred.createdAt).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -111,13 +113,13 @@ export default function History() {
                           minute: '2-digit',
                         })}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="text-right">
                         <button
                           onClick={() => handleDelete(pred.id)}
-                          className="btn-danger text-xs flex items-center gap-1 ml-auto"
+                          className="btn-danger flex items-center gap-1.5 ml-auto"
                           id={`delete-btn-${pred.id}`}
                         >
-                          <FiTrash2 size={12} />
+                          <FiTrash2 size={12} strokeWidth={2} />
                           Delete
                         </button>
                       </td>
@@ -131,17 +133,21 @@ export default function History() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-dark-500 text-sm">
+              <p className="text-sm" style={{ color: '#64748b' }}>
                 Page {page + 1} of {totalPages}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setPage(Math.max(0, page - 1))}
                   disabled={page === 0}
-                  className="p-2 rounded-lg bg-dark-800/50 border border-dark-700/30 text-dark-300
-                             hover:bg-dark-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="p-2 rounded-lg transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
+                  style={{
+                    background: '#1b1b20',
+                    color: '#c7c4d7',
+                    border: '1px solid rgba(144, 143, 160, 0.08)',
+                  }}
                 >
-                  <FiChevronLeft size={18} />
+                  <FiChevronLeft size={16} strokeWidth={2} />
                 </button>
                 {[...Array(Math.min(5, totalPages))].map((_, i) => {
                   const pageNum = Math.max(0, Math.min(page - 2, totalPages - 5)) + i
@@ -150,11 +156,20 @@ export default function History() {
                     <button
                       key={pageNum}
                       onClick={() => setPage(pageNum)}
-                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-all ${
+                      className="w-9 h-9 rounded-lg text-sm font-medium transition-all duration-200"
+                      style={
                         pageNum === page
-                          ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/25'
-                          : 'bg-dark-800/50 border border-dark-700/30 text-dark-300 hover:bg-dark-700/50'
-                      }`}
+                          ? {
+                              background: 'linear-gradient(135deg, #8083ff, #6366f1)',
+                              color: '#e1e0ff',
+                              boxShadow: '0 4px 16px rgba(99, 102, 241, 0.3)',
+                            }
+                          : {
+                              background: '#1b1b20',
+                              color: '#908fa0',
+                              border: '1px solid rgba(144, 143, 160, 0.08)',
+                            }
+                      }
                     >
                       {pageNum + 1}
                     </button>
@@ -163,10 +178,14 @@ export default function History() {
                 <button
                   onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                   disabled={page >= totalPages - 1}
-                  className="p-2 rounded-lg bg-dark-800/50 border border-dark-700/30 text-dark-300
-                             hover:bg-dark-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="p-2 rounded-lg transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
+                  style={{
+                    background: '#1b1b20',
+                    color: '#c7c4d7',
+                    border: '1px solid rgba(144, 143, 160, 0.08)',
+                  }}
                 >
-                  <FiChevronRight size={18} />
+                  <FiChevronRight size={16} strokeWidth={2} />
                 </button>
               </div>
             </div>
