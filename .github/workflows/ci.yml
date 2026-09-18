@@ -40,8 +40,13 @@ jobs:
           pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
           python -c "import nltk; nltk.download('stopwords', quiet=True)"
 
+      # Explicit bash shell turns on pipefail, so a test failure still fails
+      # the step through the tee. The final pytest line goes to the run summary.
       - name: Run tests
-        run: pytest -v --junitxml=test-results.xml
+        shell: bash
+        run: |
+          pytest -v --junitxml=test-results.xml | tee pytest.log
+          echo "### NLP tests: $(tail -n 1 pytest.log | tr -d '=')" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload test results
         if: always()
