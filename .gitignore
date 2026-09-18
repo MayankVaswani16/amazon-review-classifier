@@ -36,6 +36,7 @@ __pycache__/
 nlp-service/models/
 nlp-service/static/
 nlp-service/test-results.xml
+nlp-service/pytest.log
 
 # Personal notes
 INTERVIEW_PREP_v3.docx
