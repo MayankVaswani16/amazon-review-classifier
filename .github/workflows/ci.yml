@@ -1,0 +1,107 @@
+name: CI
+
+# Runs on every push to main and on every pull request: tests the NLP service,
+# builds the backend and frontend, and builds all three Docker images so a
+# broken Dockerfile is caught before anyone runs `docker compose up`.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch cancels the run it supersedes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  nlp-service:
+    name: NLP service (pytest + image)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: nlp-service
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same Python version as the nlp-service Dockerfile.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: nlp-service/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+          python -c "import nltk; nltk.download('stopwords', quiet=True)"
+
+      - name: Run tests
+        run: pytest -v --junitxml=test-results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nlp-test-results
+          path: nlp-service/test-results.xml
+
+      - name: Build Docker image
+        run: docker build -t review-nlp:${{ github.sha }} .
+
+  backend:
+    name: Backend (Maven + image)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      # The Dockerfile copies target/*.jar, so the JAR has to exist first.
+      - name: Build JAR
+        run: mvn -B -ntp package
+
+      - name: Build Docker image
+        run: docker build -t review-backend:${{ github.sha }} .
+
+  frontend:
+    name: Frontend (Vite + image)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # The Dockerfile copies dist/, so the production build has to exist first.
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Docker image
+        run: docker build -t review-frontend:${{ github.sha }} .
+
+  compose:
+    name: Validate docker-compose.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
