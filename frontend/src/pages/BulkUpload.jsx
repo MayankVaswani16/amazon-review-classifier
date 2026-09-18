@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import Papa from 'papaparse'
 import { FiUploadCloud, FiDownload, FiFile, FiX, FiCheckCircle } from 'react-icons/fi'
-import { startBulkJob, getBulkProgress, getBulkResult } from '../api/client'
+import { startBulkJob, getBulkProgress, getBulkResult, errorMessage } from '../api/client'
 import Spinner from '../components/Spinner'
 
 export default function BulkUpload() {
@@ -19,12 +19,17 @@ export default function BulkUpload() {
   const [completed, setCompleted] = useState(false)
   const fileInputRef = useRef(null)
   const pollRef = useRef(null)
+  // Consecutive poll failures. Without this the catch below swallowed every
+  // error forever, so a permanently dead backend produced an infinite silent
+  // loop and a progress bar frozen at 0 with no explanation.
+  const failuresRef = useRef(0)
 
   // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current)
-    }
+  // Essential cleanup: without it, navigating away mid-job leaves the interval
+  // firing forever against an unmounted component. React.StrictMode's
+  // deliberate double-mount in development exists to surface exactly this.
+  useEffect(() => () => {
+    if (pollRef.current) clearInterval(pollRef.current)
   }, [])
 
   const handleFileChange = (e) => {
@@ -52,39 +57,59 @@ export default function BulkUpload() {
     })
   }
 
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+    failuresRef.current = 0
+  }, [])
+
   const pollProgress = useCallback((id) => {
+    const MAX_CONSECUTIVE_FAILURES = 10  // ~5s of a genuinely dead backend
+
     pollRef.current = setInterval(async () => {
       try {
         const res = await getBulkProgress(id)
         const { processed, total, status } = res.data
-
+        failuresRef.current = 0
         setProgress({ processed, total })
 
         if (status === 'COMPLETED') {
-          clearInterval(pollRef.current)
-          pollRef.current = null
-
-          // Fetch final results
+          stopPolling()
           const resultRes = await getBulkResult(id)
           setResults(resultRes.data)
           setLoading(false)
           setCompleted(true)
-          toast.success('Analysis Complete!')
-
-          // Auto-redirect to dashboard after 2s
+          toast.success('Analysis complete')
           setTimeout(() => navigate('/dashboard'), 2000)
         } else if (status === 'FAILED') {
-          clearInterval(pollRef.current)
-          pollRef.current = null
+          stopPolling()
           setLoading(false)
           setJobId(null)
-          toast.error('Bulk analysis failed on server')
+          // The server now returns the actual failure reason instead of a
+          // bodyless 400, so show it rather than a generic message.
+          try {
+            await getBulkResult(id)
+          } catch (err) {
+            toast.error(errorMessage(err, 'Bulk analysis failed on the server'))
+            return
+          }
+          toast.error('Bulk analysis failed on the server')
         }
-      } catch {
-        // Silently ignore transient polling errors
+      } catch (err) {
+        // A single dropped poll is not fatal — the next tick recovers 500ms
+        // later. Sustained failure is, so give up rather than spinning silently.
+        failuresRef.current += 1
+        if (failuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
+          stopPolling()
+          setLoading(false)
+          setJobId(null)
+          toast.error(errorMessage(err, 'Lost contact with the server'))
+        }
       }
     }, 500)
-  }, [navigate])
+  }, [navigate, stopPolling])
 
   const handleAnalyze = async () => {
     if (!selectedColumn) {

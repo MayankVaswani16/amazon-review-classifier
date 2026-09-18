@@ -30,3 +30,12 @@ nlp-service/env/
 nlp-service/.venv/
 nlp-service/pip-log.txt
 nlp-service/pip-delete-this-directory.txt
+
+# Generated at runtime (the NLP service trains on startup) and by CI
+__pycache__/
+nlp-service/models/
+nlp-service/static/
+nlp-service/test-results.xml
+
+# Personal notes
+INTERVIEW_PREP_v3.docx

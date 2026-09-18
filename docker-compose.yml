@@ -27,6 +27,16 @@ services:
     container_name: review-nlp
     ports:
       - "8001:8001"
+    environment:
+      # Point this at a labelled CSV to train on real data instead of the
+      # generated bootstrap corpus. Columns: text/review + label/rating.
+      DATASET_PATH: ${DATASET_PATH:-/app/data/reviews.csv}
+    volumes:
+      # Persist trained artefacts so a rebuild does not retrain from scratch
+      # (which takes ~2 minutes and includes two t-SNE runs), and expose a
+      # drop-in location for a real dataset.
+      - nlp-models:/app/models
+      - ./nlp-service/data:/app/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/nlp/health"]
       interval: 30s
@@ -76,3 +86,4 @@ services:
 
 volumes:
   pgdata:
+  nlp-models:

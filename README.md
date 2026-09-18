@@ -1,6 +1,9 @@
 # Amazon Review Sentiment Classifier
 
-A full-stack NLP-powered web application that analyzes Amazon product reviews for sentiment, extracts product features (nouns), sentiment descriptors (adjectives), and feature→sentiment pairs using spaCy dependency parsing.
+A full-stack NLP application that analyses Amazon product reviews. It classifies
+sentiment, extracts **aspect-level opinions with polarity** ("battery life → terrible"),
+explains *why* it decided what it decided, and ranks which product features are actually
+driving unhappy customers.
 
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue) ![React](https://img.shields.io/badge/Frontend-React_18-61DAFB) ![Spring Boot](https://img.shields.io/badge/Backend-Spring_Boot_3-6DB33F) ![FastAPI](https://img.shields.io/badge/NLP-FastAPI-009688) ![PostgreSQL](https://img.shields.io/badge/DB-PostgreSQL_15-4169E1)
 
@@ -26,23 +29,100 @@ React (5173) → Spring Boot (8080) ↔ PostgreSQL (5432)
 | Database     | PostgreSQL 15                                     |
 | Deployment   | Docker, docker-compose                            |
 
-## NLP Pipeline
+## Sentiment Engine
 
-1. **clean_text** — Remove HTML, URLs, special characters; lowercase
-2. **remove_stopwords** — NLTK stopwords minus negation words (not, never, can't, etc.)
-3. **lemmatize_text** — spaCy `en_core_web_sm` lemmatizer
-4. **TF-IDF** — `max_features=5000`, `ngram_range=(1,2)`, `sublinear_tf=True`
-5. **Train/Test Split** — 80/20, stratified
-6. **SMOTE** — Oversample minority class on training data only
-7. **t-SNE** — 2D visualizations before and after SMOTE
-8. **Logistic Regression** — `C=1.0`, `solver='lbfgs'`, `max_iter=1000`
+The classifier is a **hybrid** of two independent signals:
+
+1. **Learned** — TF-IDF (uni + bigrams) into a calibrated Logistic Regression.
+   Strong on vocabulary it has seen, useless on vocabulary it hasn't.
+2. **Rule-based** — a valence lexicon with negation scope, intensifiers and
+   contrastive handling (`lexicon.py`). Weaker on nuance, but it has no
+   out-of-vocabulary problem and gets negation right by construction.
+
+They are combined by a weighted blend in which **each engine's weight reflects how
+much it actually knows about the text in front of it** — the model's by vocabulary
+coverage, the lexicon's by the magnitude of its score. Critically, a lexicon score of
+`0.0` means *"no opinion"*, not *"neutral opinion"*; conflating the two was measured
+to cost ~9 points of accuracy.
+
+The relative weight is **measured, not hand-picked**: after training, both engines are
+scored on an out-of-distribution benchmark and the weight is set from their odds ratio.
+Train on real data and the weight shifts back toward the model automatically.
+
+### Pipeline
+
+1. **clean_text** — strip HTML, URLs, non-letters; lowercase (apostrophes kept so
+   contractions survive as negators)
+2. **remove_stopwords** — NLTK stopwords **minus negation words**. NLTK's list contains
+   "not"; removing it turns "not good" into "good" and silently inverts the label
+3. **lemmatize_text** — spaCy `en_core_web_sm`
+4. **TF-IDF** — `ngram_range=(1,2)`, which is what lets "not good" be learned as a
+   feature distinct from "good". Step 2 only pays off because of this
+5. **Split** — 80/20 stratified. The vectoriser is fitted on the **training split only**
+6. **SMOTE** — training split only; before the split it would interpolate synthetic
+   points between rows that later land in test, which is textbook leakage
+7. **t-SNE** — diagnostic projections; never used at prediction time
+8. **Calibrated Logistic Regression** — so 0.8 confidence means something
+
+## Honest evaluation
+
+| Measure | Score | What it means |
+| --- | --- | --- |
+| In-distribution accuracy | **99.1%** | Held-out split of the training corpus. **Not a real-world estimate** — the test data comes from the same generator as the training data, so this largely measures how well the model memorised the grammar |
+| Out-of-distribution (model only) | **70.2%** | Hand-written realistic reviews with negation, sarcasm, mixed sentiment, misspellings |
+| Out-of-distribution (lexicon only) | **77.2%** | |
+| **Out-of-distribution (hybrid)** | **80.7%** | The number that matters |
+
+The gap between 99% and 81% is the honest generalisation story, and both numbers are
+published in the UI rather than only the flattering one.
+
+**To make this production-grade, supply real training data.** Point `DATASET_PATH` at a
+labelled CSV (columns `text`/`review` + `label`/`rating`; 1–2★ → negative, 4–5★ →
+positive, 3★ dropped) and the service trains on it instead of the bootstrap corpus.
+
+```bash
+cp your-amazon-reviews.csv nlp-service/data/reviews.csv
+docker-compose up --build
+```
 
 ## Features
 
-- **Analyzer** — Single review sentiment analysis with confidence bar, noun/adjective badges, and feature-sentiment table
-- **Dashboard** — Stat cards, donut chart, bar charts, SMOTE distribution, t-SNE visualizations
-- **History** — Paginated prediction history with delete
-- **Bulk Upload** — CSV upload with column selector, batch analysis, and CSV download
+- **Analyzer** — sentiment with confidence, **aspect-level polarity**, engine-agreement
+  and low-signal warnings, and a "Why this verdict?" explanation
+- **Explainability** — per-token contributions that sum **exactly** to the decision
+  logit (linear models make this exact, not approximate like LIME/SHAP), plus a
+  **counterfactual**: the minimal set of words whose removal flips the verdict
+- **Aspect Actionability Matrix** — the novel one. Ranks product aspects by
+  `volume × severity × lift`, where lift is how much mentioning an aspect raises the
+  odds of a negative review above the corpus baseline. A frequency chart ranks the
+  most-talked-about feature first; this ranks the one actually costing you customers
+- **Dashboard** — stat cards, sentiment split (including **mixed**), top features,
+  actionability matrix, live model metrics, SMOTE distribution, t-SNE
+- **History** — paginated, batch-scoped, with delete
+- **Bulk Upload** — CSV upload, async job with live progress, batch-tagged results
+
+### Why the Actionability Matrix is different
+
+Given a jacket corpus where *colour* is mentioned 46 times and *zipper* 34:
+
+```
+ASPECT      MENTIONS   NEG   MEAN POL    LIFT   IMPACT
+zipper            34    30      -0.46   +0.47    0.974   <- fix this
+colour            46     0      +0.58   -0.42    0.000   <- mentioned MORE, not a problem
+```
+
+Frequency ranks *colour* first. Lift correctly ranks *zipper* first, because reviews
+mentioning the zipper are 47 percentage points more likely to be negative.
+
+## Tests
+
+```bash
+cd nlp-service && python -m pytest -q     # 51 tests
+```
+
+Covering negation and contrast handling, aspect extraction with negation, exact
+attribution (contributions sum to the logit), counterfactual validity, blend
+abstention behaviour, and batch/single prediction equivalence.
 
 ---
 

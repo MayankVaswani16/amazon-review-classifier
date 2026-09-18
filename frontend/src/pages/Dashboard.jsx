@@ -5,8 +5,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts'
 import { FiTrendingUp, FiThumbsUp, FiThumbsDown, FiTarget } from 'react-icons/fi'
-import { getStats, getTsneBefore, getTsneAfter } from '../api/client'
+import { getStats, getTsneBefore, getTsneAfter, errorMessage } from '../api/client'
 import Spinner from '../components/Spinner'
+import ActionabilityMatrix from '../components/ActionabilityMatrix'
+import ModelHonesty from '../components/ModelHonesty'
 
 const COLORS = {
   positive: '#4edea3',
@@ -14,6 +16,7 @@ const COLORS = {
   primary: '#8083ff',
   accent: '#c4b5fd',
   sky: '#7dd3fc',
+  mixed: '#fbbf24',
 }
 
 const chartTooltipStyle = {
@@ -37,7 +40,7 @@ export default function Dashboard() {
       const res = await getStats()
       setStats(res.data)
     } catch (err) {
-      toast.error('Failed to load statistics')
+      toast.error(errorMessage(err, 'Failed to load statistics'))
     } finally {
       setLoading(false)
     }
@@ -54,10 +57,12 @@ export default function Dashboard() {
     )
   }
 
+  // "mixed" is a real verdict now, so the donut can no longer assume two slices.
   const donutData = [
     { name: 'Positive', value: stats.positivePredictions },
     { name: 'Negative', value: stats.negativePredictions },
-  ]
+    { name: 'Mixed', value: stats.mixedPredictions || 0 },
+  ].filter((d) => d.value > 0)
 
   const nounData = (stats.topNouns || []).map(n => ({ name: n.word, count: n.count }))
   const adjData = (stats.topAdjectives || []).map(a => ({ name: a.word, count: a.count }))
@@ -132,8 +137,18 @@ export default function Dashboard() {
                   dataKey="value"
                   strokeWidth={0}
                 >
-                  <Cell fill={COLORS.positive} />
-                  <Cell fill={COLORS.negative} />
+                  {donutData.map((d) => (
+                    <Cell
+                      key={d.name}
+                      fill={
+                        d.name === 'Positive'
+                          ? COLORS.positive
+                          : d.name === 'Negative'
+                          ? COLORS.negative
+                          : COLORS.mixed
+                      }
+                    />
+                  ))}
                 </Pie>
                 <Tooltip contentStyle={chartTooltipStyle} />
                 <Legend
@@ -205,6 +220,15 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Novel: prioritised fix-list, not a frequency chart */}
+      <ActionabilityMatrix
+        aspects={stats.aspectImpact}
+        baselineNegativeRate={stats.baselineNegativeRate}
+      />
+
+      {/* Credibility: publish the unflattering number too */}
+      <ModelHonesty metrics={stats.modelMetrics} />
 
       {/* t-SNE Images */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

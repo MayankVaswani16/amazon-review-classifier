@@ -23,11 +23,13 @@ ENV NLTK_DATA=/usr/local/nltk_data
 COPY . .
 
 # Create model/image output directories
-RUN mkdir -p models static
+RUN mkdir -p models static data
 
 EXPOSE 8001
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
+# start-period is generous because a cold container with no cached model
+# trains at startup, including two t-SNE projections.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
     CMD curl -f http://localhost:8001/nlp/health || exit 1
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]

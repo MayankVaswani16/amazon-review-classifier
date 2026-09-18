@@ -8,3 +8,7 @@ numpy==1.26.2
 imbalanced-learn==0.11.0
 matplotlib==3.8.2
 Pillow==10.1.0
+
+# Testing
+pytest==7.4.4
+httpx==0.25.2          # FastAPI TestClient dependency

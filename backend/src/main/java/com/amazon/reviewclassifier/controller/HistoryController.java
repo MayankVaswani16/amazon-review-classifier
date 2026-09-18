@@ -14,11 +14,21 @@ public class HistoryController {
 
     private final PredictionService predictionService;
 
+    /**
+     * Paginated history, newest first.
+     *
+     * <p>{@code size} is validated in the service and capped at 100. Without a
+     * cap, {@code ?size=1000000} attempts to materialise the whole table along
+     * with every eagerly-fetched collection.
+     *
+     * @param batchId optional — scopes results to a single bulk upload.
+     */
     @GetMapping
     public ResponseEntity<Page<PredictionResponseDTO>> getHistory(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(predictionService.getHistory(page, size));
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String batchId) {
+        return ResponseEntity.ok(predictionService.getHistory(page, size, batchId));
     }
 
     @GetMapping("/{id}")
